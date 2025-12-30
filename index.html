@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>30 Second Prediction</title>
+<style>
+body{
+    background:#020617;
+    color:#fff;
+    font-family:Arial;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+.panel{
+    width:320px;
+    padding:20px;
+    border:1px solid #38bdf8;
+    border-radius:12px;
+    box-shadow:0 0 15px #38bdf8;
+}
+h2{text-align:center;color:#38bdf8;}
+.box{
+    border:1px solid #334155;
+    border-radius:8px;
+    padding:12px;
+    margin-top:15px;
+}
+.label{color:#94a3b8;font-size:13px;}
+.value{font-size:20px;margin-top:5px;}
+.big{color:#22c55e;}
+.small{color:#ef4444;}
+.timer{color:#facc15;font-size:12px;margin-top:5px;}
+</style>
+</head>
+<body>
+
+<div class="panel" id="app" style="display:none;">
+<h2>30s Prediction</h2>
+<div class="box">
+    <div class="label">PERIOD</div>
+    <div class="value" id="period"></div>
+
+    <div class="label" style="margin-top:10px;">RESULT</div>
+    <div class="value" id="result"></div>
+
+    <div class="timer" id="timer"></div>
+</div>
+</div>
+
+<script>
+// 🔐 LICENSE SYSTEM
+const VALID_KEYS = ["KEY-111-AAA","KEY-222-BBB","KEY-333-CCC"];
+
+function getDeviceId(){
+    let id = localStorage.getItem("device_id");
+    if(!id){
+        id = "DEV-" + Math.random().toString(36).substr(2,9);
+        localStorage.setItem("device_id", id);
+    }
+    return id;
+}
+
+function checkLicense(){
+    const deviceId = getDeviceId();
+    let saved = JSON.parse(localStorage.getItem("licenses") || "{}");
+
+    let userKey = localStorage.getItem("user_key");
+    if(!userKey){
+        userKey = prompt("Enter License Key:");
+        if(!VALID_KEYS.includes(userKey)){
+            alert("Invalid Key ❌");
+            return false;
+        }
+        if(saved[userKey] && saved[userKey] !== deviceId){
+            alert("Key already used on another device ❌");
+            return false;
+        }
+        saved[userKey] = deviceId;
+        localStorage.setItem("licenses", JSON.stringify(saved));
+        localStorage.setItem("user_key", userKey);
+    }
+    return true;
+}
+
+// ❌ Stop if license fails
+if(!checkLicense()){
+    document.body.innerHTML = "<h2 style='color:red'>Access Denied</h2>";
+}
+
+// ✅ APP CODE
+document.getElementById("app").style.display="block";
+
+let lastPeriod = "";
+let currentResult = "";
+
+function generateResult(){
+    return Math.random() > 0.5 ? "BIG" : "SMALL";
+}
+
+function getPeriod30(d){
+    return Math.floor(d.getTime() / 30000);
+}
+
+function displayPeriod(d){
+    return d.getFullYear().toString().slice(-2)+
+    ("0"+(d.getMonth()+1)).slice(-2)+
+    ("0"+d.getDate()).slice(-2)+
+    ("0"+d.getHours()).slice(-2)+
+    ("0"+d.getMinutes()).slice(-2)+
+    Math.floor(d.getSeconds()/30);
+}
+
+function update(){
+    const now = new Date();
+    const periodSlot = getPeriod30(now);
+
+    if(periodSlot !== lastPeriod){
+        lastPeriod = periodSlot;
+        currentResult = generateResult();
+    }
+
+    document.getElementById("period").innerText = displayPeriod(now);
+    document.getElementById("result").innerHTML =
+        currentResult === "BIG"
+        ? "<span class='big'>BIG</span>"
+        : "<span class='small'>SMALL</span>";
+
+    const remain = 30 - Math.floor((now.getTime() % 30000) / 1000);
+    document.getElementById("timer").innerText = "Next in: " + remain + " sec";
+}
+
+update();
+setInterval(update,1000);
+</script>
+
+</body>
+</html>
